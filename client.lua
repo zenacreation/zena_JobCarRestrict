@@ -28,35 +28,21 @@ local function IsVehicleAllowedForJob(vehicle, job)
 end
 
 local function TeleportToSideOfVehicle(ped, vehicle)
-    local offset = GetOffsetFromEntityInWorldCoords(vehicle,
-        Config.TeleportOffset.x,
-        Config.TeleportOffset.y,
-        Config.TeleportOffset.z)
-    SetEntityCoords(ped, offset.x, offset.y, offset.z)
+    TaskLeaveVehicle(ped, vehicle, 1)
 end
 
-CreateThread(function()
-    while true do
-        Wait(Config.CheckInterval)
 
-        local ped = PlayerPedId()
-        local vehicle = GetVehiclePedIsIn(ped, false)
-
-        if vehicle and DoesEntityExist(vehicle) and GetPedInVehicleSeat(vehicle, -1) == ped then
-            local playerData = ESX.GetPlayerData()
-            if playerData and playerData.job then
-                local job = playerData.job.name
-                if not IsVehicleAllowedForJob(vehicle, job) then
-                    TaskLeaveVehicle(ped, vehicle, 0)
-                    Wait(500)
-                    TeleportToSideOfVehicle(ped, vehicle)
-                    ShowNotification(
-                        Config.Translations.error_title,
-                        Config.Translations.no_permission,
-                        'error'
-                    )
-                end
+lib.onCache('vehicle', function(vehicle)
+    if vehicle and GetPedInVehicleSeat(vehicle, -1) == cache.ped then
+        if ESX.GetPlayerData().job then
+            if not IsVehicleAllowedForJob(vehicle, ESX.GetPlayerData().job.name) then
+                TaskLeaveVehicle(cache.ped, vehicle, 0)
+                Wait(500)
+                TeleportToSideOfVehicle(cache.ped, vehicle)
+                ShowNotification(Config.Translations.error_title, Config.Translations.no_permission, 'error')
             end
         end
     end
 end)
+
+
